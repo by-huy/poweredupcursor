@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { motion, useMotionValue } from "framer-motion";
+import { motion, useMotionValue, useSpring } from "framer-motion";
+// useMotionValue avoids things from doing unnecessary rerendering --> Switch from useState
 
 export default function Cursor({ linksRef, videoRef }) {
   const [cursorText, setCursorText] = useState("");
@@ -13,6 +14,17 @@ export default function Cursor({ linksRef, videoRef }) {
     x: useMotionValue(0),
   };
 
+  const spring = {
+    type: "spring",
+    stiffness: 500,
+    damping: 50,
+    mass: 0.5,
+  };
+
+  const smoothMouse = {
+    x: useSpring(cursor.x, spring),
+    y: useSpring(cursor.y, spring)
+  }
 
   const trackCursor = (e) => {
     const { clientY, clientX } = e;
@@ -25,23 +37,16 @@ export default function Cursor({ linksRef, videoRef }) {
     default: {
       width: cursorSize,
       height: cursorSize,
-      transition: {
-        type: "spring",
-        mass: 0.6,
-      },
     },
     links: {
       width: cursorSize,
       height: cursorSize,
+      backgroundColor: '#618264'
     },
   };
 
-  const spring = {
-    type: "spring",
-    stiffness: 500,
-    damping: 28,
-  };
-
+  
+//   Hovering functions
   const linkOver = () => {
     setCursorText('👋')
     setCursorVariant("links")
@@ -60,6 +65,8 @@ export default function Cursor({ linksRef, videoRef }) {
         link.addEventListener("mouseleave", linkLeave)
     })
     window.addEventListener("mousemove", trackCursor);
+
+    // Cleaning up the listeners after it has unmounted
     return () => {
       window.removeEventListener("mousemove", trackCursor);
       linksRef.current.forEach((link) => {
@@ -73,9 +80,9 @@ export default function Cursor({ linksRef, videoRef }) {
     <div>
       <motion.div
         variants={variants}
-        transition={spring}
         animate={cursorVariant}
-        style={{ left: cursor.x, top: cursor.y }}
+        transition={spring}
+        style={{ left: smoothMouse.x, top: smoothMouse.y }}
         className="z-[999] w-4 h-4 bg-red-500 rounded-full fixed pointer-events-none flex justify-center items-center"
       >
         <span>{cursorText}</span>
